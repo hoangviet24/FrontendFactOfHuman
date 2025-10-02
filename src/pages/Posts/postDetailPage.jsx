@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { getPostById } from '../../services/postService';
+import { useAuth } from '../../hooks/useAuth';
+import { toast } from 'react-toastify';
+import { useNavigate } from 'react-router-dom';
 import 'swiper/css';
 import 'swiper/css/pagination';
 
@@ -8,7 +11,8 @@ const BASE_URL = import.meta.env.VITE_API_URL
 export default function PostDetailPage() {
     const { id } = useParams();
     const [post, setPost] = useState(null);
-
+    const { user } = useAuth();
+    const navigate = useNavigate();
     useEffect(() => {
         getPostById(id).then(setPost);
     }, [id]);
@@ -21,17 +25,24 @@ export default function PostDetailPage() {
         <div className="max-w-3xl mx-auto px-4 py-10 text-white">
             <h1 className="text-3xl font-bold text-blue-700 mb-2">{post.title}</h1>
             <div className="flex items-center gap-3 mb-4">
-                <img
-                    src={BASE_URL + post.authorAvatarUrl}
-                    alt="avatar"
-                    className="w-10 h-10 rounded-full object-cover border border-gray-300 dark:border-gray-600 hover:scale-105 transition-transform duration-200"
-                />
-                <a
-                    href={`/users/${post.authorId}`}
-                    className="text-sm text-blue-300 hover:underline"
+                <button
+                    onClick={() => {
+                        if (!user) {
+                            toast.info('🔒 Bạn cần đăng nhập để xem hồ sơ người dùng');
+                            navigate('/login');
+                        } else {
+                            navigate(`/users/${post.authorId}`);
+                        }
+                    }}
+                    className="flex items-center gap-2 hover:underline"
                 >
-                    ✍️ {post.authorName}
-                </a>
+                    <img
+                        src={BASE_URL + post.authorAvatarUrl}
+                        alt="avatar"
+                        className="w-8 h-8 rounded-full object-cover border border-gray-300 dark:border-gray-600 hover:scale-105 transition-transform duration-200"
+                    />
+                    <p className="text-sm text-gray-600 dark:text-gray-400">✍️ {post.authorName}</p>
+                </button>
                 <span className="text-sm text-gray-400">• {formattedDate}</span>
             </div>
             <img src={BASE_URL + post.coverImage} alt="cover" className="rounded-lg my-6 mx-auto w-full max-w-3xl object-cover" />
