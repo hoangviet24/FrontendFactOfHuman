@@ -1,5 +1,4 @@
 import axios from '../api/axios';
-const token = localStorage.getItem('Token');
 const BASE_URL = import.meta.env.VITE_API_URL
 export const login = async (email, password) => {
   const response = await axios.post('/api/Auth/login', { email, password });
@@ -52,7 +51,7 @@ export const getCurrentUser = async (id = null) => {
   return await res.json();
 };
 export const updateUser = async (formData, role) => {
-
+  const token = localStorage.getItem('Token');
   const response = await axios.put(`/api/Auth/update-user?role=${role}`, formData, {
     headers: {
       Authorization: `Bearer ${token}`,

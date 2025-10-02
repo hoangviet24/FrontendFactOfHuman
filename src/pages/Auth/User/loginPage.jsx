@@ -11,7 +11,7 @@ const handleLogin = async () => {
     const data = await login(email, password);
     localStorage.setItem('Token', data.token);
     localStorage.setItem('refreshToken', data.refreshToken);
-
+    console.log(data.token);
     toast.success('✅ Đăng nhập thành công!');
     window.dispatchEvent(new Event('authChanged')); 
     navigate('/');
