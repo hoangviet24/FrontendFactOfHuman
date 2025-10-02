@@ -1,9 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { getPostById } from '../../services/postService';
-import '../filecss//PostDetailPage.css';
-import { Swiper, SwiperSlide } from 'swiper/react';
-import { Pagination } from 'swiper/modules';
+import '../filecss/PostDetailPage.css';
 import 'swiper/css';
 import 'swiper/css/pagination';
 
