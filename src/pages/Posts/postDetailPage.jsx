@@ -6,9 +6,9 @@ import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
 import { createComment, getCommentsByPostId } from '../../services/commentService';
 import { HubConnectionBuilder } from "@microsoft/signalr";
-import { Menu, ActionIcon } from '@mantine/core';
+import { Menu, Button, ActionIcon } from "@mantine/core";
 import { IconDotsVertical, IconTrash, IconEdit } from '@tabler/icons-react';
-import { deleteComment, updateComment } from '../../services/commentService';
+import { deleteComment } from '../../services/commentService';
 import 'swiper/css';
 import 'swiper/css/pagination';
 
@@ -19,6 +19,7 @@ export default function PostDetailPage() {
     const { user } = useAuth();
     const [comments, setComments] = useState([]);
     const [newComment, setNewComment] = useState("");
+    const [activeDropdown, setActiveDropdown] = useState(null);
     const navigate = useNavigate();
     useEffect(() => {
         getPostById(id).then(setPost);
@@ -45,6 +46,15 @@ export default function PostDetailPage() {
             connection.stop();
         };
     }, [id]);
+    const handleDeleteComment = async (commentId) => {
+        try {
+            await deleteComment(commentId); // gọi API xóa comment
+            setComments(prev => prev.filter(c => c.id !== commentId));
+            toast.success("🗑️ Đã xóa bình luận");
+        } catch {
+            toast.error("❌ Lỗi khi xóa bình luận");
+        }
+    };
 
 
     const handleAddComment = async () => {
@@ -70,7 +80,6 @@ export default function PostDetailPage() {
     const formattedDate = new Date(post.publishedAt.split('.')[0]).toLocaleDateString();
 
     return (
-
         <div className="max-w-3xl mx-auto px-4 py-10 text-white">
             <h1 className="text-3xl font-bold text-blue-700 mb-2">{post.title}</h1>
             <div className="flex items-center gap-3 mb-4">
@@ -142,10 +151,9 @@ export default function PostDetailPage() {
                 {comments.map(c => (
                     <div
                         key={c.id}
-                        className="border-b border-gray-700 py-3 text-left relative"
+                        className="border-b border-gray-700 py-3 text-left flex justify-between items-start relative"
                     >
-                        <div className="flex justify-between items-start">
-                            {/* Avatar + Tên */}
+                        <div className="flex-1">
                             <button
                                 onClick={() => {
                                     if (!user) {
@@ -165,61 +173,48 @@ export default function PostDetailPage() {
                                 <p className="text-sm font-semibold text-blue-400">{c.userName}</p>
                             </button>
 
-                            {/* Menu 3 chấm - chỉ hiện với chủ comment */}
-                            {user && user.id === c.userId && (
-                                <Menu position="bottom-end" shadow="md" width={150}>
-                                    <Menu.Target>
-                                        <ActionIcon variant="subtle" color="gray">
-                                            <IconDotsVertical size={18} />
-                                        </ActionIcon>
-                                    </Menu.Target>
-                                    <Menu.Dropdown>
-                                        <Menu.Item
-                                            leftSection={<IconEdit size={16} />}
-                                            onClick={async () => {
-                                                const newText = prompt("Nhập nội dung mới:", c.content);
-                                                if (newText && newText.trim()) {
-                                                    try {
-                                                        const updated = await updateComment(c.id, newText);
-                                                        setComments(prev =>
-                                                            prev.map(cm => cm.id === c.id ? updated : cm)
-                                                        );
-                                                        toast.success("✅ Sửa bình luận thành công");
-                                                    } catch {
-                                                        toast.error("❌ Không thể sửa bình luận");
-                                                    }
-                                                }
-                                            }}
-                                        >
-                                            Sửa
-                                        </Menu.Item>
-                                        <Menu.Item
-                                            color="red"
-                                            leftSection={<IconTrash size={16} />}
-                                            onClick={async () => {
-                                                if (confirm("Bạn chắc chắn muốn xóa bình luận này?")) {
-                                                    try {
-                                                        await deleteComment(c.id);
-                                                        setComments(prev => prev.filter(cm => cm.id !== c.id));
-                                                        toast.success("🗑️ Đã xóa bình luận");
-                                                    } catch {
-                                                        toast.error("❌ Không thể xóa bình luận");
-                                                    }
-                                                }
-                                            }}
-                                        >
-                                            Xóa
-                                        </Menu.Item>
-                                    </Menu.Dropdown>
-                                </Menu>
-                            )}
+                            <p className="text-xxl text-gray-200 mt-1">{c.content}</p>
                         </div>
 
-                        {/* Nội dung comment */}
-                        <p className="text-xxl text-gray-200 mt-1">{c.content}</p>
+                        {/* Menu 3 chấm */}
+                        {user?.id === c.userId && (
+                            <div className="relative flex-shrink-0 ml-2">
+                                <button
+                                    onClick={() =>
+                                        setActiveDropdown(activeDropdown === c.id ? null : c.id)
+                                    }
+                                    className="p-2 rounded hover:bg-gray-700 transition"
+                                >
+                                    <IconDotsVertical size={18} className="text-gray-300" />
+                                </button>
+
+                                {activeDropdown === c.id && (
+                                    <ul className="absolute right-0 mt-2 w-36 bg-white rounded-md shadow-lg z-20 text-sm text-gray-700 overflow-hidden border border-gray-200">
+                                        <li>
+                                            <button
+                                                onClick={() => toast.info("✏️ Chức năng sửa đang phát triển")}
+                                                className="w-full text-left px-4 py-2 hover:bg-gray-100"
+                                            >
+                                                ✏️ Sửa
+                                            </button>
+                                        </li>
+                                        <li>
+                                            <button
+                                                onClick={() => {
+                                                    handleDeleteComment(c.id);
+                                                    setActiveDropdown(null);
+                                                }}
+                                                className="w-full text-left px-4 py-2 text-red-600 hover:bg-red-100"
+                                            >
+                                                🗑️ Xóa
+                                            </button>
+                                        </li>
+                                    </ul>
+                                )}
+                            </div>
+                        )}
                     </div>
                 ))}
-
                 {/* Form nhập */}
                 <div className="mt-4 flex gap-2">
                     <input

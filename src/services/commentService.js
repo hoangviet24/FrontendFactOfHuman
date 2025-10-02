@@ -21,8 +21,3 @@ export const deleteComment = async(commentId) => {
     const res = await axios.delete(`${BASE_URL}/api/Comment/Delete-Comment/${commentId}`, { headers: { Authorization: `Bearer ${token}` } });
     return res.data;
 }
-export const updateComment = async(commentId, content) => {
-    const token = localStorage.getItem('Token');
-    const res = await axios.put(`${BASE_URL}/api/Comment/Update-Comment/${commentId}`, { content }, { headers: { Authorization: `Bearer ${token}` } });
-    return res.data;
-}
