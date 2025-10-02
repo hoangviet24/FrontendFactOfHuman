@@ -6,6 +6,9 @@ import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
 import { createComment, getCommentsByPostId } from '../../services/commentService';
 import { HubConnectionBuilder } from "@microsoft/signalr";
+import { Menu, ActionIcon } from '@mantine/core';
+import { IconDotsVertical, IconTrash, IconEdit } from '@tabler/icons-react';
+import { deleteComment, updateComment } from '../../services/commentService';
 import 'swiper/css';
 import 'swiper/css/pagination';
 
@@ -20,9 +23,13 @@ export default function PostDetailPage() {
     useEffect(() => {
         getPostById(id).then(setPost);
     }, [id]);
+    // Lấy comment cũ khi load trang
+    useEffect(() => {
+        getCommentsByPostId(id).then(setComments);
+    }, [id]);
     useEffect(() => {
         const connection = new HubConnectionBuilder()
-            .withUrl(`${BASE_URL.replace("http", "ws")}/hubs/comments?postId=${id}`)
+            .withUrl(`${BASE_URL}/hubs/comments?postId=${id}`)
             .withAutomaticReconnect()
             .build();
 
@@ -38,6 +45,7 @@ export default function PostDetailPage() {
             connection.stop();
         };
     }, [id]);
+
 
     const handleAddComment = async () => {
         if (!user) {
@@ -134,30 +142,81 @@ export default function PostDetailPage() {
                 {comments.map(c => (
                     <div
                         key={c.id}
-                        className="border-b border-gray-700 py-3 text-left"
+                        className="border-b border-gray-700 py-3 text-left relative"
                     >
-                        {/* Avatar + Tên: click để đi tới trang user */}
-                        <button
-                            onClick={() => {
-                                if (!user) {
-                                    toast.info("🔒 Bạn cần đăng nhập để xem hồ sơ người dùng");
-                                    navigate("/login");
-                                } else {
-                                    navigate(`/users/${c.userId}`);
-                                }
-                            }}
-                            className="flex items-center gap-2 hover:underline"
-                        >
-                            <img
-                                src={BASE_URL + c.avatarUser}
-                                alt={c.userName}
-                                className="w-8 h-8 rounded-full object-cover border border-gray-600"
-                            />
-                            <p className="text-sm font-semibold text-blue-400">{c.userName}</p>
-                        </button>
+                        <div className="flex justify-between items-start">
+                            {/* Avatar + Tên */}
+                            <button
+                                onClick={() => {
+                                    if (!user) {
+                                        toast.info("🔒 Bạn cần đăng nhập để xem hồ sơ người dùng");
+                                        navigate("/login");
+                                    } else {
+                                        navigate(`/users/${c.userId}`);
+                                    }
+                                }}
+                                className="flex items-center gap-2 hover:underline"
+                            >
+                                <img
+                                    src={BASE_URL + c.avatarUser}
+                                    alt={c.userName}
+                                    className="w-8 h-8 rounded-full object-cover border border-gray-600"
+                                />
+                                <p className="text-sm font-semibold text-blue-400">{c.userName}</p>
+                            </button>
+
+                            {/* Menu 3 chấm - chỉ hiện với chủ comment */}
+                            {user && user.id === c.userId && (
+                                <Menu position="bottom-end" shadow="md" width={150}>
+                                    <Menu.Target>
+                                        <ActionIcon variant="subtle" color="gray">
+                                            <IconDotsVertical size={18} />
+                                        </ActionIcon>
+                                    </Menu.Target>
+                                    <Menu.Dropdown>
+                                        <Menu.Item
+                                            leftSection={<IconEdit size={16} />}
+                                            onClick={async () => {
+                                                const newText = prompt("Nhập nội dung mới:", c.content);
+                                                if (newText && newText.trim()) {
+                                                    try {
+                                                        const updated = await updateComment(c.id, newText);
+                                                        setComments(prev =>
+                                                            prev.map(cm => cm.id === c.id ? updated : cm)
+                                                        );
+                                                        toast.success("✅ Sửa bình luận thành công");
+                                                    } catch {
+                                                        toast.error("❌ Không thể sửa bình luận");
+                                                    }
+                                                }
+                                            }}
+                                        >
+                                            Sửa
+                                        </Menu.Item>
+                                        <Menu.Item
+                                            color="red"
+                                            leftSection={<IconTrash size={16} />}
+                                            onClick={async () => {
+                                                if (confirm("Bạn chắc chắn muốn xóa bình luận này?")) {
+                                                    try {
+                                                        await deleteComment(c.id);
+                                                        setComments(prev => prev.filter(cm => cm.id !== c.id));
+                                                        toast.success("🗑️ Đã xóa bình luận");
+                                                    } catch {
+                                                        toast.error("❌ Không thể xóa bình luận");
+                                                    }
+                                                }
+                                            }}
+                                        >
+                                            Xóa
+                                        </Menu.Item>
+                                    </Menu.Dropdown>
+                                </Menu>
+                            )}
+                        </div>
 
                         {/* Nội dung comment */}
-                        <p className="text-xxl text-gray-200  mt-1">{c.content}</p>
+                        <p className="text-xxl text-gray-200 mt-1">{c.content}</p>
                     </div>
                 ))}
 
