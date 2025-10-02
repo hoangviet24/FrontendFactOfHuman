@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { getPostById } from '../../services/postService';
 import { useAuth } from '../../hooks/useAuth';
@@ -6,9 +6,9 @@ import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
 import { createComment, getCommentsByPostId } from '../../services/commentService';
 import { HubConnectionBuilder } from "@microsoft/signalr";
-import { Menu, Button, ActionIcon } from "@mantine/core";
 import { IconDotsVertical, IconTrash, IconEdit } from '@tabler/icons-react';
 import { deleteComment } from '../../services/commentService';
+
 import 'swiper/css';
 import 'swiper/css/pagination';
 
@@ -20,6 +20,7 @@ export default function PostDetailPage() {
     const [comments, setComments] = useState([]);
     const [newComment, setNewComment] = useState("");
     const [activeDropdown, setActiveDropdown] = useState(null);
+    const commentsEndRef = useRef(null);
     const navigate = useNavigate();
     useEffect(() => {
         getPostById(id).then(setPost);
@@ -28,6 +29,9 @@ export default function PostDetailPage() {
     useEffect(() => {
         getCommentsByPostId(id).then(setComments);
     }, [id]);
+    useEffect(() => {
+  commentsEndRef.current?.scrollIntoView({ behavior: "smooth" });
+}, [comments]);
     useEffect(() => {
         const connection = new HubConnectionBuilder()
             .withUrl(`${BASE_URL}/hubs/comments?postId=${id}`)
@@ -39,7 +43,7 @@ export default function PostDetailPage() {
         });
 
         connection.on("ReceiveComment", (comment) => {
-            setComments(prev => [...prev, comment]);
+            setComments(prev => [...prev,comment ]);
         });
 
         return () => {
@@ -145,6 +149,9 @@ export default function PostDetailPage() {
                     )}
                 </div>
             ))}
+            <div className="flex flex-col max-h-[400px] border border-gray-600 rounded overflow-y-auto">
+                
+            </div>
             <div className="mt-10">
                 <h2 className="text-3xl font-semibold mb-4 text-left">Bình luận</h2>
 
@@ -215,6 +222,7 @@ export default function PostDetailPage() {
                         )}
                     </div>
                 ))}
+                <div ref={commentsEndRef} />
                 {/* Form nhập */}
                 <div className="mt-4 flex gap-2">
                     <input
