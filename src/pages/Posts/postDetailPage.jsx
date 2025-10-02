@@ -5,6 +5,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
 import { createComment, getCommentsByPostId } from '../../services/commentService';
+import { HubConnectionBuilder } from "@microsoft/signalr";
 import 'swiper/css';
 import 'swiper/css/pagination';
 
@@ -20,9 +21,22 @@ export default function PostDetailPage() {
         getPostById(id).then(setPost);
     }, [id]);
     useEffect(() => {
-        if (id) {
-            getCommentsByPostId(id).then(setComments);
-        }
+        const connection = new HubConnectionBuilder()
+            .withUrl(`${BASE_URL.replace("http", "ws")}/hubs/comments?postId=${id}`)
+            .withAutomaticReconnect()
+            .build();
+
+        connection.start().then(() => {
+            console.log("Connected to SignalR");
+        });
+
+        connection.on("ReceiveComment", (comment) => {
+            setComments(prev => [...prev, comment]);
+        });
+
+        return () => {
+            connection.stop();
+        };
     }, [id]);
 
     const handleAddComment = async () => {
