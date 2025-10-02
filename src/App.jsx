@@ -18,7 +18,6 @@ import TagManager from './pages/Auth/Tags/TagManager';
 import { Navigate } from 'react-router-dom';
 import UserProfilePage from './pages/Auth/User/userProfilePage';
 import UserPostsPage from './pages/Auth/User/UserPostPage';
-import './App.css';
 
 function App() {
   return (

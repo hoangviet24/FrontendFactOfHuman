@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import UserMenu from './userMenu';
+import UserMenu from './UserMenu';
 import './filecss/Navbar.css';
 import { toast } from 'react-toastify';
 import { useAuth } from '../hooks/useAuth';
@@ -77,20 +77,20 @@ export default function Navbar() {
             ) : user ? (
               <UserMenu user={user} />
             ) : (
-             <div className="flex gap-2">
-  <Link
-    to="/login"
-    className="px-4 py-2 bg-blue-600 rounded text-white text-sm font-medium hover:bg-blue-700 transition"
-  >
-    Đăng nhập
-  </Link>
-  <Link
-    to="/register"
-    className="px-4 py-2 border border-blue-600 rounded text-blue-600 text-sm font-medium hover:bg-blue-100 transition"
-  >
-    Đăng ký
-  </Link>
-</div>
+              <div className="flex gap-2">
+                <Link
+                  to="/login"
+                  className="px-4 py-2 bg-blue-600 rounded text-white text-sm font-medium hover:bg-blue-700 transition"
+                >
+                  Đăng nhập
+                </Link>
+                <Link
+                  to="/register"
+                  className="px-4 py-2 border border-blue-600 rounded text-blue-600 text-sm font-medium hover:bg-blue-100 transition"
+                >
+                  Đăng ký
+                </Link>
+              </div>
 
             )}
           </div>

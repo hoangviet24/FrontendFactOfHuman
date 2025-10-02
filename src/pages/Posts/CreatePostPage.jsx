@@ -14,16 +14,16 @@ export default function CreatePostPage() {
     coverImage: null
   });
 
-const [contentBlocks, setContentBlocks] = useState([
-  { 
-    topContent: '', 
-    bottomContent: '', 
-    topImage: null, 
-    bottomImage: null,
-    topImagePreview: null,
-    bottomImagePreview: null
-  }
-]);
+  const [contentBlocks, setContentBlocks] = useState([
+    {
+      topContent: '',
+      bottomContent: '',
+      topImage: null,
+      bottomImage: null,
+      topImagePreview: null,
+      bottomImagePreview: null
+    }
+  ]);
 
 
   const [categories, setCategories] = useState([]);
@@ -84,11 +84,11 @@ const [contentBlocks, setContentBlocks] = useState([
   };
 
   const handleBlockFile = (index, field, file) => {
-  const updated = [...contentBlocks];
-  updated[index][field] = file;
-  updated[index][field + 'Preview'] = file ? URL.createObjectURL(file) : null;
-  setContentBlocks(updated);
-};
+    const updated = [...contentBlocks];
+    updated[index][field] = file;
+    updated[index][field + 'Preview'] = file ? URL.createObjectURL(file) : null;
+    setContentBlocks(updated);
+  };
 
 
   const addBlock = () => {

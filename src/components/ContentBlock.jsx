@@ -1,5 +1,3 @@
-import './filecss/ContentBlock.css';
-
 export default function ContentBlock({
   index,
   block,
