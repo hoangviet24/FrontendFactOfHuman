@@ -50,7 +50,10 @@ export default function UpdateProfilePage() {
 
   if (!user) return <p className="text-center text-gray-500 mt-20">Đang tải thông tin...</p>;
 
-  const roleOptions = ['Reader', 'Author'];
+  const roleOptions = [
+    { label: "Reader", value: 0 },
+    { label: "Author", value: 1 },
+  ];
 
   return (
     <div className="max-w-xl mx-auto mt-16 px-6 py-10  text-white rounded-xl shadow-2xl">
@@ -141,8 +144,8 @@ export default function UpdateProfilePage() {
               onChange={handleChange}
               className="w-full p-3 rounded  text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              {roleOptions.map(role => (
-                <option key={role} value={role}>{role}</option>
+              {roleOptions.map(r => (
+                <option key={r.value} value={r.value}>{r.label}</option>
               ))}
             </select>
           </div>
