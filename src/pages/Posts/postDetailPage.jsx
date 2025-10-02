@@ -4,6 +4,7 @@ import { getPostById } from '../../services/postService';
 import { useAuth } from '../../hooks/useAuth';
 import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
+import { createComment, getCommentsByPostId } from '../../services/commentService';
 import 'swiper/css';
 import 'swiper/css/pagination';
 
@@ -12,16 +13,42 @@ export default function PostDetailPage() {
     const { id } = useParams();
     const [post, setPost] = useState(null);
     const { user } = useAuth();
+    const [comments, setComments] = useState([]);
+    const [newComment, setNewComment] = useState("");
     const navigate = useNavigate();
     useEffect(() => {
         getPostById(id).then(setPost);
     }, [id]);
+    useEffect(() => {
+        if (id) {
+            getCommentsByPostId(id).then(setComments);
+        }
+    }, [id]);
 
+    const handleAddComment = async () => {
+        if (!user) {
+            toast.info("🔒 Bạn cần đăng nhập để bình luận");
+            navigate("/login");
+            return;
+        }
+        if (!newComment.trim()) return;
+
+        try {
+            await createComment(id, newComment);
+            toast.success("💬 Bình luận thành công!");
+            setNewComment("");
+            const updated = await getCommentsByPostId(id);
+            setComments(updated);
+        } catch {
+            toast.error("❌ Lỗi khi gửi bình luận");
+        }
+    };
     if (!post) return <p>Đang tải bài viết...</p>;
 
     const formattedDate = new Date(post.publishedAt.split('.')[0]).toLocaleDateString();
 
     return (
+
         <div className="max-w-3xl mx-auto px-4 py-10 text-white">
             <h1 className="text-3xl font-bold text-blue-700 mb-2">{post.title}</h1>
             <div className="flex items-center gap-3 mb-4">
@@ -87,8 +114,59 @@ export default function PostDetailPage() {
                     )}
                 </div>
             ))}
+            <div className="mt-10">
+                <h2 className="text-3xl font-semibold mb-4 text-left">Bình luận</h2>
 
+                {comments.map(c => (
+                    <div
+                        key={c.id}
+                        className="border-b border-gray-700 py-3 text-left"
+                    >
+                        {/* Avatar + Tên: click để đi tới trang user */}
+                        <button
+                            onClick={() => {
+                                if (!user) {
+                                    toast.info("🔒 Bạn cần đăng nhập để xem hồ sơ người dùng");
+                                    navigate("/login");
+                                } else {
+                                    navigate(`/users/${c.userId}`);
+                                }
+                            }}
+                            className="flex items-center gap-2 hover:underline"
+                        >
+                            <img
+                                src={BASE_URL + c.avatarUser}
+                                alt={c.userName}
+                                className="w-8 h-8 rounded-full object-cover border border-gray-600"
+                            />
+                            <p className="text-sm font-semibold text-blue-400">{c.userName}</p>
+                        </button>
+
+                        {/* Nội dung comment */}
+                        <p className="text-xxl text-gray-200  mt-1">{c.content}</p>
+                    </div>
+                ))}
+
+                {/* Form nhập */}
+                <div className="mt-4 flex gap-2">
+                    <input
+                        type="text"
+                        value={newComment}
+                        onChange={e => setNewComment(e.target.value)}
+                        onKeyDown={e => e.key === 'Enter' && handleAddComment()}
+                        placeholder="Viết bình luận..."
+                        className="flex-1 px-3 py-2 rounded bg-gray-800 border border-gray-600"
+                    />
+                    <button
+                        onClick={handleAddComment}
+                        className="px-4 py-2 bg-blue-600 rounded text-white"
+                    >
+                        Gửi
+                    </button>
+                </div>
+            </div>
         </div>
+
 
     );
 }

@@ -48,7 +48,7 @@ export default function ProfilePage() {
                           bg-green-500"></span>
         </div>
         <p className="italic text-gray-400 text-center text-sm max-w-md">
-          {user.bio || 'Chưa có tiểu sử'}
+          Tiểu sử: {user.bio || 'Chưa có tiểu sử'}
         </p>
       </div>
 
