@@ -1,7 +1,7 @@
 import axios from '../api/axios';
 const BASE_URL = import.meta.env.VITE_API_URL
-export const getAllPosts = async () => {
-  const response = await axios.get('/api/Post/get-all');
+export const getAllPosts = async (skip = 0, take = 30) => {
+  const response = await axios.get(`/api/Post/get-all?skip=${skip}&take=${take}`);
   return response.data;
 };
 export const getTop10 = async () => {

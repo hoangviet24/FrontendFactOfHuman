@@ -15,30 +15,45 @@ export default function PostListPage() {
   const [posts, setPosts] = useState([]);
   const [topPosts, setTopPosts] = useState([]);
   const { user } = useAuth();
+  const [skip, setSkip] = useState(0);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true); // có còn bài để load
   const navigate = useNavigate();
 
   const BASE_URL = import.meta.env.VITE_API_URL
+  
+  const loadMorePosts = async () => {
+    if (loadingMore || !hasMore) return;
+    setLoadingMore(true);
+    try {
+      const newPosts = await getAllPosts(skip, 30);
+      setPosts(prev => [...prev, ...newPosts]);
+      setSkip(prev => prev + 30);
+      if (newPosts.length < 30) setHasMore(false); // hết bài
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoadingMore(false);
+    }
+  };
   useEffect(() => {
-    getAllPosts().then(setPosts);
     getTop10().then(setTopPosts);
+    loadMorePosts(); // load 30 bài đầu tiên
   }, []);
   useEffect(() => {
-    const loadPosts = async () => {
-      try {
-        const timeout = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error("timeout")), 30000) // 30s
-        );
-
-        const res = await Promise.race([getAllPosts(), timeout]);
-        setPosts(res);
-      } catch (error) {
-        console.error("Lỗi khi tải bài viết:", error);
-        toast.error("⏳ Quá lâu để tải dữ liệu, hãy thử reload lại trang!");
+    const handleScroll = () => {
+      if (
+        window.innerHeight + window.scrollY >= document.body.offsetHeight - 500 &&
+        hasMore &&
+        !loadingMore
+      ) {
+        loadMorePosts();
       }
     };
 
-    loadPosts();
-  }, []);
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [skip, hasMore, loadingMore]);
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">

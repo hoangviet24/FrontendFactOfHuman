@@ -20,6 +20,8 @@ export default function PostDetailPage() {
     const [comments, setComments] = useState([]);
     const [newComment, setNewComment] = useState("");
     const [activeDropdown, setActiveDropdown] = useState(null);
+    const [justCommented, setJustCommented] = useState(false);
+
     const commentsEndRef = useRef(null);
     const navigate = useNavigate();
     useEffect(() => {
@@ -29,9 +31,14 @@ export default function PostDetailPage() {
     useEffect(() => {
         getCommentsByPostId(id).then(setComments);
     }, [id]);
+    // Scroll xuống cuối khi có comment mới
     useEffect(() => {
-  commentsEndRef.current?.scrollIntoView({ behavior: "smooth" });
-}, [comments]);
+        if (justCommented) {
+            commentsEndRef.current?.scrollIntoView({ behavior: "smooth" });
+            setJustCommented(false); // reset
+        }
+    }, [comments, justCommented]);
+
     useEffect(() => {
         const connection = new HubConnectionBuilder()
             .withUrl(`${BASE_URL}/hubs/comments?postId=${id}`)
@@ -43,7 +50,7 @@ export default function PostDetailPage() {
         });
 
         connection.on("ReceiveComment", (comment) => {
-            setComments(prev => [...prev,comment ]);
+            setComments(prev => [...prev, comment]);
         });
 
         return () => {
@@ -75,6 +82,7 @@ export default function PostDetailPage() {
             setNewComment("");
             const updated = await getCommentsByPostId(id);
             setComments(updated);
+            setJustCommented(true); // trigger scroll
         } catch {
             toast.error("❌ Lỗi khi gửi bình luận");
         }
@@ -106,6 +114,7 @@ export default function PostDetailPage() {
                     <p className="text-sm text-gray-600 dark:text-gray-400">✍️ {post.authorName}</p>
                 </button>
                 <span className="text-sm text-gray-400">• {formattedDate}</span>
+                <span>• {post.views} lượt xem</span>
             </div>
             <img src={BASE_URL + post.coverImage} alt="cover" className="rounded-lg my-6 mx-auto w-full max-w-3xl object-cover" />
             <p className=" mb-4 italic">Tóm tắt: {post.summary}</p>
@@ -150,7 +159,7 @@ export default function PostDetailPage() {
                 </div>
             ))}
             <div className="flex flex-col max-h-[400px] border border-gray-600 rounded overflow-y-auto">
-                
+
             </div>
             <div className="mt-10">
                 <h2 className="text-3xl font-semibold mb-4 text-left">Bình luận</h2>
