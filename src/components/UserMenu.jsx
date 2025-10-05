@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { getCurrentUser } from '../services/authService';
 import { Link } from 'react-router-dom';
 import './filecss/UserMenu.css';
+
 export default function UserMenu() {
   const [open, setOpen] = useState(false);
   const [user, setUser] = useState(null);
@@ -28,6 +29,7 @@ export default function UserMenu() {
 
   return (
     <div className="relative" ref={menuRef}>
+      {/* Avatar toggle */}
       <button
         onClick={() => setOpen(!open)}
         className="focus:outline-none"
@@ -39,12 +41,20 @@ export default function UserMenu() {
         />
       </button>
 
+      {/* Dropdown */}
       {open && (
-        <div className="absolute right-0 mt-2 w-40 bg-white text-gray-700 rounded-lg shadow-lg overflow-hidden animate-fade-in">
+        <div
+          className="
+            absolute right-0 mt-2 
+            w-40 md:w-40 w-[90vw]   /* trên mobile chiếm gần full màn hình */
+            bg-white text-gray-700 
+            rounded-lg shadow-lg overflow-hidden animate-fade-in
+          "
+        >
           <Link
             to="/profile"
             onClick={() => setOpen(false)}
-            className="block px-4 py-2 hover:bg-gray-100 transition"
+            className="block px-4 py-3 hover:bg-gray-100 transition text-base md:text-sm"
           >
             Thông tin cá nhân
           </Link>
@@ -53,7 +63,7 @@ export default function UserMenu() {
               setOpen(false);
               handleLogout();
             }}
-            className="w-full text-left block px-4 py-2 hover:bg-gray-100 transition"
+            className="w-full text-left block px-4 py-3 hover:bg-gray-100 transition text-base md:text-sm"
           >
             Đăng xuất
           </button>
