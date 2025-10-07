@@ -37,6 +37,51 @@ export async function createPost(postFormData, token) {
     throw err;
   }
 }
+export async function likePost(postId) {
+  const token = localStorage.getItem('Token');
+  const res = await fetch(`${BASE_URL}/api/Reaction/create?targetType=0&typeReaction=0`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify({ targetId: postId })
+  });
+
+  if (!res.ok) {
+    // Lấy status code từ response
+    const errorData = await res.json().catch(() => ({}));
+    const error = new Error(errorData.message || "Like bài viết thất bại");
+    error.status = res.status; // tự thêm thuộc tính status
+    throw error;
+  }
+
+  return res.json(); // phải .json() để lấy data
+}
+
+export async function unlikePost(reactionId) {
+  const token = localStorage.getItem('Token');
+  const res = await fetch(`${BASE_URL}/api/Reaction/delete/${reactionId}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  });
+
+  if (!res.ok) {
+    const errorText = await res.text();
+    throw new Error(errorText || "Unlike thất bại");
+  }
+
+  return await res.json(); // API của cậu trả { message: "..."} → nên .json()
+}
+
+export async function getLikesByPost(postId) {
+  const res = await fetch(`${BASE_URL}/api/Reaction/get-by-post/${postId}`);
+  if (!res.ok) throw new Error("Không thể lấy danh sách like");
+
+  return await res.json(); // fetch → dùng .json(), không có res.data
+}
 
 
 export async function createPostBlock(blockFormData, token) {
@@ -44,8 +89,8 @@ export async function createPostBlock(blockFormData, token) {
     console.log('Token gửi lên:', token);
     const res = await fetch(`${BASE_URL}/api/PostBlock`, {
       method: "POST",
-      headers: { 
-        Authorization: `Bearer ${token}` ,
+      headers: {
+        Authorization: `Bearer ${token}`,
         Accept: 'application/json',
         // ✅ KHÔNG set Content-Type, để browser tự set cho multipart/form-data
       },

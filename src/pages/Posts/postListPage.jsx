@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
-import { getAllPosts, getTop10 } from '../../services/postService';
+/* eslint-disable react-hooks/exhaustive-deps */
+import { useEffect, useState, useCallback } from 'react';
+import { getAllPosts, getTop10, likePost, getLikesByPost, unlikePost } from '../../services/postService';
 import { Link, useNavigate } from 'react-router-dom';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Pagination, Autoplay, EffectFade } from 'swiper/modules';
@@ -19,17 +20,31 @@ export default function PostListPage() {
   const [hasMore, setHasMore] = useState(true);
   const navigate = useNavigate();
   const BASE_URL = import.meta.env.VITE_API_URL;
-
-  const loadMorePosts = async () => {
+  const enrichPostsWithReactions = async (posts, currentUserId) => {
+    return Promise.all(
+      posts.map(async (p) => {
+        const data = await getLikesByPost(p.id);
+        const myReaction = data.reaction.find(r => r.userId === currentUserId);
+        return {
+          ...p,
+          likesCount: data.count,                   // thay post.likesCount = data.count
+          userReactionId: myReaction ? myReaction.id : null, // để unlike
+        };
+      })
+    );
+  };
+  const loadMorePosts = useCallback(async () => {
     if (loadingMore || !hasMore) return;
     setLoadingMore(true);
     try {
       const newPosts = await getAllPosts(skip, 30);
 
-      // lọc trùng theo id nếu API trả về chồng dữ liệu
+      // enrich ngay sau khi fetch
+      const enriched = await enrichPostsWithReactions(newPosts, user?.id);
+
       setPosts(prev => {
         const ids = new Set(prev.map(p => p.id));
-        const unique = newPosts.filter(p => !ids.has(p.id));
+        const unique = enriched.filter(p => !ids.has(p.id));
         return [...prev, ...unique];
       });
 
@@ -40,7 +55,53 @@ export default function PostListPage() {
     } finally {
       setLoadingMore(false);
     }
+  }, [loadingMore, hasMore, skip, user?.id]);
 
+
+  const handleLike = async (post) => {
+    try {
+      if (!user) {
+        toast.info('🔒 Bạn cần đăng nhập để like bài viết!');
+        navigate('/login');
+        return;
+      }
+
+      await likePost(post.id);
+      toast.success('❤️ Bạn đã like bài viết!');
+      console.log('Liked post ID:', post.likesCount);
+
+      setPosts(prevPosts =>
+        prevPosts.map(p =>
+          p.id === post.id
+            ? { ...p, likesCount: (p.likesCount || 0) + 1 }
+            : p
+        )
+      );
+    } catch (err) {
+      if (err.status === 409) {
+        // Nếu đã like → unlike luôn
+        try {
+          // lấy reactionId để unlike (cậu cần enrichPosts trước đó đã có userReactionId)
+          const data = await getLikesByPost(post.id); // { count, reaction: [...] }
+          const my = data.reaction.find(r => r.userId === user.id);
+          await unlikePost(my.id);
+          toast.info("💔 Bạn đã bỏ like bài viết!");
+          setPosts(prevPosts =>
+            prevPosts.map(p =>
+              p.id === post.id
+                ? { ...p, likesCount: (p.likesCount || 1) - 1, userReactionId: null }
+                : p
+            )
+          );
+        } catch (unlikeErr) {
+          toast.error("❌ Không thể bỏ like: " + unlikeErr.message + post.id);
+        }
+      } else if (err.status === 404) {
+        toast.error("❌ Không tìm thấy bài viết!");
+      } else {
+        toast.error("❌ Lỗi: " + err.message);
+      }
+    }
   };
 
   // gọi 1 lần khi mount
@@ -71,7 +132,31 @@ export default function PostListPage() {
     };
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [hasMore, loadingMore]);
+  }, [hasMore, loadMorePosts, loadingMore]);
+  useEffect(() => {
+    async function fetchLikes() {
+      try {
+        const updatedPosts = await Promise.all(
+          posts.map(async (post) => {
+            const likeData = await getLikesByPost(post.id);
+            return {
+              ...post,
+              likesCount: likeData.count || 0 // đúng field nè
+            };
+          })
+        );
+        setPosts(updatedPosts);
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    if (posts.length > 0) {
+      fetchLikes();
+    }
+  }, [posts.length]);
+
+
 
   return (<div className="max-w-6xl mx-auto px-4 py-8"> <h2 className="text-2xl font-bold mb-4">🔥 Top 10 bài viết nổi bật</h2>
     {topPosts.length === 0 ? (<div className="text-center text-gray-500 italic mb-10">
@@ -195,6 +280,11 @@ export default function PostListPage() {
               >
                 🔍 Xem chi tiết
               </Link>
+            </div>
+            <div className="flex items-center gap-3 mt-3">
+              <button onClick={() => handleLike(post)}>
+                ❤️ Like ({post.likesCount || 0})
+              </button>
             </div>
           </div>
         ))}

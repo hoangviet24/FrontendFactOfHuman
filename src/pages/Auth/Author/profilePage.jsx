@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
 import { getCurrentUser } from '../../../services/authService';
-import { Link } from 'react-router-dom';
+import { Link , useNavigate} from 'react-router-dom';
 
 export default function ProfilePage() {
   const [user, setUser] = useState(null);
   const BASE_URL = import.meta.env.VITE_API_URL;
-
+  const navigate = useNavigate();
   const authMethodMap = {
     local: 'Ứng dụng',
     google: 'Bên thứ 3 (Google)',
@@ -31,6 +31,14 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-[80vh] mt-16 mx-auto px-6 py-10 text-gray-100 max-w-3xl">
+      {/* Nút quay lại */}
+      <button
+        onClick={() => navigate(-1)}
+        className="mb-6 px-4 py-2 rounded-md border border-gray-600 hover:bg-gray-800 
+                   transition text-sm font-medium flex"
+      >
+        ⬅️ Quay lại
+      </button>
       {/* Title */}
       <h2 className="text-3xl font-extrabold mb-10 text-center tracking-wide">
         Hồ sơ cá nhân

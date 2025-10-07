@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { useParams } from 'react-router-dom';
-import { getPostById } from '../../services/postService';
+import { getPostById, likePost, unlikePost, getLikesByPost } from '../../services/postService';
 import { useAuth } from '../../hooks/useAuth';
 import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
@@ -24,9 +24,70 @@ export default function PostDetailPage() {
 
     const commentsEndRef = useRef(null);
     const navigate = useNavigate();
+    const enrichPostsWithReactions = async (posts, currentUserId) => {
+        return Promise.all(
+            posts.map(async (p) => {
+                const data = await getLikesByPost(p.id);
+                const myReaction = data.reaction.find(r => r.userId === currentUserId);
+                return {
+                    ...p,
+                    likesCount: data.count,                   // thay post.likesCount = data.count
+                    userReactionId: myReaction ? myReaction.id : null, // để unlike
+                };
+            })
+        );
+    };
+    const handleLike = async (post) => {
+        try {
+            if (!user) {
+                toast.info('🔒 Bạn cần đăng nhập để like bài viết!');
+                navigate('/login');
+                return;
+            }
+
+            await likePost(post.id);
+            toast.success('❤️ Bạn đã like bài viết!');
+            setPost(prev => ({
+                ...prev,
+                likesCount: (prev.likesCount || 0) + 1
+            }));
+        } catch (err) {
+            if (err.status === 409) {
+                try {
+                    const data = await getLikesByPost(post.id);
+                    const my = data.reaction.find(r => r.userId === user.id);
+                    await unlikePost(my.id);
+                    toast.info("💔 Bạn đã bỏ like bài viết!");
+                    setPost(prev => ({
+                        ...prev,
+                        likesCount: (prev.likesCount || 1) - 1,
+                        userReactionId: null
+                    }));
+                } catch (unlikeErr) {
+                    toast.error("❌ Không thể bỏ like: " + unlikeErr.message);
+                }
+            } else {
+                toast.error("❌ Lỗi: " + err.message);
+            }
+        }
+    };
+
     useEffect(() => {
-        getPostById(id).then(setPost);
-    }, [id]);
+        const fetchPost = async () => {
+            const p = await getPostById(id);
+            const data = await getLikesByPost(p.id);
+            const enrichedPosts = await enrichPostsWithReactions([p], user ? user.id : null);
+            const myReaction = data.reaction.find(r => r.userId === user?.id);
+            setPost({
+                ...p,
+                likesCount: data.count,
+                userReactionId: myReaction ? myReaction.id : null,
+                ...enrichedPosts[0]
+            });
+        };
+        fetchPost();
+    }, [id, user]);
+
     // Lấy comment cũ khi load trang
     useEffect(() => {
         getCommentsByPostId(id).then(setComments);
@@ -156,6 +217,11 @@ export default function PostDetailPage() {
                             className="rounded w-full object-contain max-h-[400px]"
                         />
                     )}
+                    <div className="flex items-center gap-3 mt-3">
+                        <button onClick={() => handleLike(post)}>
+                            ❤️ Like ({post.likesCount || 0})
+                        </button>
+                    </div>
                 </div>
             ))}
             <div className="flex flex-col max-h-[400px] border border-gray-600 rounded overflow-y-auto">
@@ -251,7 +317,5 @@ export default function PostDetailPage() {
                 </div>
             </div>
         </div>
-
-
     );
 }

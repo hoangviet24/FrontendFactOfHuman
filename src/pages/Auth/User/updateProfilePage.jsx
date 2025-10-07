@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { getCurrentUser, updateUser } from '../../../services/authService';
 import { toast } from 'react-toastify';
 import CropAvatarModal from '../../../components/CropAvatarModal';
+import { useNavigate } from 'react-router-dom';
 
 export default function UpdateProfilePage() {
   const [user, setUser] = useState(null);
@@ -9,6 +10,7 @@ export default function UpdateProfilePage() {
   const [avatarPreview, setAvatarPreview] = useState(null);
   const [showCropModal, setShowCropModal] = useState(false);
   const [rawAvatarFile, setRawAvatarFile] = useState(null);
+  const navigate = useNavigate();
   const BASE_URL = import.meta.env.VITE_API_URL;
   useEffect(() => {
     getCurrentUser().then(data => {
@@ -53,6 +55,14 @@ export default function UpdateProfilePage() {
 
   return (
     <div className="max-w-xl mx-auto mt-16 px-6 py-10  text-white rounded-xl shadow-2xl">
+      {/* Nút quay lại */}
+      <button
+        onClick={() => navigate(-1)}
+        className="mb-6 px-4 py-2 rounded-md border border-gray-600 hover:bg-gray-800 
+                   transition text-sm font-medium flex "
+      >
+        ⬅️ Quay lại
+      </button>
       <h2 className="text-2xl font-bold  mb-6 text-center">✏️ Cập nhật hồ sơ</h2>
       <form onSubmit={handleSubmit} className="space-y-5">
         <div>
