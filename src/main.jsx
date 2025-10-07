@@ -7,11 +7,11 @@ import App from './App.jsx'
 import { MantineProvider } from '@mantine/core';
 
 createRoot(document.getElementById('root')).render(
-  <StrictMode>
-      <MantineProvider withGlobalStyles withNormalizeCSS>
+  // <StrictMode>
+    
+  // </StrictMode>,
+  <MantineProvider withGlobalStyles withNormalizeCSS>
       <App />
       <ToastContainer position="top-right" autoClose={3000} />
     </MantineProvider>
-  </StrictMode>,
-
 )
